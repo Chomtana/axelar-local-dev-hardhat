@@ -2,6 +2,7 @@ import { Network, createNetwork, deployContract, relay } from "@axelar-network/a
 import { expect } from "chai";
 import { Wallet, Contract, utils, ContractTransaction } from "ethers-v5";
 import { artifacts, ethers } from "hardhat";
+import { bootstrapNetworks } from "./axelar";
 
 const defaultAbiCoder = ethers.AbiCoder.defaultAbiCoder()
 
@@ -12,32 +13,17 @@ describe("Test ERC20 token bridge", function () {
   let ethContract: Contract, avalancheContract: Contract;
 
   before(async () => {
-    // Initialize an Ethereum network
-    eth = await createNetwork({
-      name: "Ethereum",
-    });
+    // Bootstraping networks
+    const bootstrap = await bootstrapNetworks()
 
-    // Deploy USDC token on the Ethereum network
-    await eth.deployToken("USDC", "aUSDC", 6, BigInt(100_000e6));
+    eth = bootstrap.eth;
+    avalanche = bootstrap.avalanche;
 
-    // Initialize an Avalanche network
-    avalanche = await createNetwork({
-      name: "Avalanche",
-    });
+    ethUserWallet = bootstrap.ethUserWallet;
+    avalancheUserWallet = bootstrap.avalancheUserWallet;
 
-    // Deploy USDC token on the Avalanche network
-    await avalanche.deployToken("USDC", "aUSDC", 6, BigInt(100_000e6));
-
-    // Extract user wallets for both Ethereum and Avalanche networks
-    const ethUserWallets = eth.userWallets;
-    const avalancheUserWallets = avalanche.userWallets;
-
-    ethUserWallet = ethUserWallets[0]
-    avalancheUserWallet = avalancheUserWallets[0]
-
-    // Get the token contracts for both Ethereum and Avalanche networks
-    usdcEthContract = await eth.getTokenContract("aUSDC");
-    usdcAvalancheContract = await avalanche.getTokenContract("aUSDC");
+    usdcEthContract = bootstrap.usdcEthContract;
+    usdcAvalancheContract = bootstrap.usdcAvalancheContract;
 
     // Deploy MyToken
     const MyToken = await artifacts.readArtifact("ChomToken")
