@@ -11,23 +11,20 @@ npx hardhat test
 
 ## Example unit testing code
 
-An overview of unit testing with axelar local dev and hardhat can be summarized in the below sample code snippet:
+An overview of unit testing with axelar local dev and hardhat can be summarized in the below sample code snippets:
+
+axelar.ts
 
 ```typescript
 import { Network, createNetwork, deployContract, relay } from "@axelar-network/axelar-local-dev";
-import { expect } from "chai";
 import { Wallet, Contract, utils } from "ethers-v5";
-import { artifacts, ethers } from "hardhat";
 
-const defaultAbiCoder = ethers.AbiCoder.defaultAbiCoder()
+let eth: Network, avalanche: Network;
+let ethUserWallet: Wallet, avalancheUserWallet: Wallet;
+let usdcEthContract: Contract, usdcAvalancheContract: Contract;
 
-describe("Basic Axelar Bridge & GMP Unit Test", function () {
-  let eth: Network, avalanche: Network;
-  let ethUserWallet: Wallet, avalancheUserWallet: Wallet;
-  let usdcEthContract: Contract, usdcAvalancheContract: Contract;
-  let ethContract: Contract, avalancheContract: Contract;
-
-  before(async () => {
+export async function bootstrapNetworks() {
+  if (!eth) {
     // Initialize an Ethereum network
     eth = await createNetwork({
       name: "Ethereum",
@@ -54,6 +51,50 @@ describe("Basic Axelar Bridge & GMP Unit Test", function () {
     // Get the token contracts for both Ethereum and Avalanche networks
     usdcEthContract = await eth.getTokenContract("aUSDC");
     usdcAvalancheContract = await avalanche.getTokenContract("aUSDC");
+  }
+
+  return {
+    eth,
+    avalanche,
+
+    ethUserWallet,
+    avalancheUserWallet,
+
+    usdcEthContract,
+    usdcAvalancheContract,
+  }
+}
+```
+
+Test case
+
+```typescript
+import { Network, deployContract, relay } from "@axelar-network/axelar-local-dev";
+import { expect } from "chai";
+import { Wallet, Contract, utils } from "ethers-v5";
+import { artifacts, ethers } from "hardhat";
+import { bootstrapNetworks } from "./axelar";
+
+const defaultAbiCoder = ethers.AbiCoder.defaultAbiCoder()
+
+describe("Basic Axelar Bridge & GMP Unit Test", function () {
+  let eth: Network, avalanche: Network;
+  let ethUserWallet: Wallet, avalancheUserWallet: Wallet;
+  let usdcEthContract: Contract, usdcAvalancheContract: Contract;
+  let ethContract: Contract, avalancheContract: Contract;
+
+  before(async () => {
+    // Bootstraping networks
+    const bootstrap = await bootstrapNetworks()
+
+    eth = bootstrap.eth;
+    avalanche = bootstrap.avalanche;
+
+    ethUserWallet = bootstrap.ethUserWallet;
+    avalancheUserWallet = bootstrap.avalancheUserWallet;
+
+    usdcEthContract = bootstrap.usdcEthContract;
+    usdcAvalancheContract = bootstrap.usdcAvalancheContract;
 
     // Deploy DummyAxelarExecutable
     const DummyAxelarExecutable = await artifacts.readArtifact("DummyAxelarExecutable")
