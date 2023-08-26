@@ -5,7 +5,7 @@ let eth: Network, avalanche: Network;
 let ethUserWallet: Wallet, avalancheUserWallet: Wallet;
 let usdcEthContract: Contract, usdcAvalancheContract: Contract;
 
-export async function bootstrapNetworks() {
+export async function bootstrapNetworks(walletIndex = 0) {
   if (!eth) {
     // Initialize an Ethereum network
     eth = await createNetwork({
@@ -23,17 +23,17 @@ export async function bootstrapNetworks() {
     // Deploy USDC token on the Avalanche network
     await avalanche.deployToken("USDC", "aUSDC", 6, BigInt(100_000e6));
 
-    // Extract user wallets for both Ethereum and Avalanche networks
-    const ethUserWallets = eth.userWallets;
-    const avalancheUserWallets = avalanche.userWallets;
-
-    ethUserWallet = ethUserWallets[0]
-    avalancheUserWallet = avalancheUserWallets[0]
-
     // Get the token contracts for both Ethereum and Avalanche networks
     usdcEthContract = await eth.getTokenContract("aUSDC");
     usdcAvalancheContract = await avalanche.getTokenContract("aUSDC");
   }
+
+  // Extract user wallets for both Ethereum and Avalanche networks
+  const ethUserWallets = eth.userWallets;
+  const avalancheUserWallets = avalanche.userWallets;
+
+  ethUserWallet = ethUserWallets[walletIndex]
+  avalancheUserWallet = avalancheUserWallets[walletIndex]
 
   return {
     eth,
